@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+        @apply w-full h-full font-[62.5%] box-border m-0 p-0 bg-neutral-200
+    }
+
+    main {
+    @apply flex-grow;
+}
+
+    button, a {
+        @apply cursor-pointer 
+    }
+
+
+    h1 {
+        @apply text-5xl font-bold
+    }
+
+    h2 {
+        @apply text-3xl font-semibold
+    }
+
+    h3 {
+        @apply text-2xl font-semibold
+    }
+
+    h4 {
+        @apply text-lg font-semibold
+    }
+
+    input, select {
+        @apply p-2 border-2 border-neutral-400 outline-2 outline-emerald-300 rounded-md
+    }
+
+    button {
+      @apply bg-emerald-500 text-emerald-50 p-2 uppercase font-[600] border-2 border-emerald-500
+        hover:bg-emerald-100 hover:text-emerald-500 rounded-md
+    }
+}
+    
+@layer utilities {
+    .dropdown {
+        @apply absolute top-full left-0 hidden w-48 shadow-lg rounded-md;
+    }
+
+    .app-container {
+    @apply flex flex-col min-h-screen;
+
+    }
+
+}
+
