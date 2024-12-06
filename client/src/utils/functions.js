@@ -14,7 +14,7 @@ export function esFechaValida (fecha) {
     * @returns {boolean} - Retorna true si la cédula es válida
 */
 export const esCedulaValida = (cedula) => {
-    return /^\d{10}$/.test(cedula);  
+    return /^\d{8,10}$/.test(cedula);  
 };
 
 /**

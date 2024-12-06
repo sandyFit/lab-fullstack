@@ -1,21 +1,40 @@
 import React, { useState } from 'react';
-import CentroDropdown from '../ui/CentroDropdown';
-import { esFechaValida, esFechaDuplicada, primeraEnMayuscula, esCedulaValida } from '../../utils/functions';
+import { esFechaValida, primeraEnMayuscula, esCedulaValida } from '../../utils/functions';
 import { toast } from 'react-hot-toast';
-import { centrosAtencion } from '../../utils/centros';
+import axios from 'axios';
 
 const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
-    const [centro, setCentro] = useState('Seleccione un centro de atención');
-    const [nombre, setNombre] = useState('');
-    const [cedula, setCedula] = useState('');
-    const [fecha, setFecha] = useState('');
-    const [horaInicio, setHoraInicio] = useState('');
-    const [horaFin, setHoraFin] = useState('');
 
-    const centroSeleccionado = centrosAtencion.find(c => c.nombre === centro);
+    const [formData, setFormData] = useState({
+        centro: '',
+        cedula: '',
+        fecha: '',
+        horaInicio: '',
+        horaFin: ''
+    });
 
-    const handleFormSubmit = (e) => {
+    const handleChange = e => {
+        const { name, value } = e.target;
+        setFormData(prevData => ({
+            ...prevData,
+            [name]: value
+        }));
+    };
+
+    
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
+
+        const { cedula, fecha, horaInicio, horaFin } = formData;
+
+        const formDataProcessed = {
+            centro_id: parseInt(formData.centro, 10), // Convertir a número
+            cedula,
+            fecha,
+            hora_inicio: horaInicio,
+            hora_fin: horaFin
+        };
+        console.log("Datos enviados al backend como formData:", formDataProcessed); 
 
         // Validar fecha
         if (!esFechaValida(fecha)) {
@@ -23,52 +42,49 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
             return;
         }
 
-        // Verificar si la fecha está duplicada
-        if (esFechaDuplicada(fecha, cedula, disponibilidad)) {
-            toast.error('El médico ya tiene disponibilidad registrada en esta fecha.');
-            return;
-        }
-
+        // Validar cédula
         if (!esCedulaValida(cedula)) {
-            toast.error('La cédula debe contener 10 dígitos');
+            toast.error('La cédula debe contener solo números entre 8 y 10 dígitos.');
             return;
         }
 
-        // Validar que el horario ingresado coincide con el del centro seleccionado
-        if (!centroSeleccionado) {
-            toast.error('Seleccione un centro de atención válido.');
-            return;
+        try {
+            const response = await axios.post('http://localhost:5000/registro/disponibilidad',
+                formDataProcessed, {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            console.log(response.config.headers);
+
+
+            if (response.data.success) {
+                toast.success('Disponibilidad registrada con éxito');
+                agregarDisponibilidad(formDataProcessed);
+                setFormData({
+                    centro: '',
+                    cedula: '',
+                    fecha: '',
+                    horaInicio: '',
+                    horaFin: ''
+                });
+
+            } else {
+                console.log(response.data.message);
+                toast.error(response.data.message);
+            }
+        } catch (error) {
+            if (error.response?.status === 409) {
+                toast.error('El médico ya tiene disponibilidad registrada para el centro y la fecha seleccionados.');
+            } else if (error.response?.status === 400) {
+                toast.error(error.response.data.error || 'Datos inválidos. Revisa los campos.');
+            } else if (error.response?.status === 500) {
+                toast.error('Error del servidor. Intenta de nuevo más tarde.');
+            } else {
+                toast.error('Algo salió mal. Por favor, revisa tu conexión e inténtalo nuevamente.');
+            }
         }
-
-        const { horaInicio: horaMin, horaFin: horaMax } = centroSeleccionado;
-
-        if (horaInicio < horaMin || horaFin > horaMax) {
-            toast.error(`Los horarios del ${centroSeleccionado.nombre} deben estar entre
-                 ${horaMin} y ${horaMax}.`);
-            return;
-        }
-
-
-
-        // Agregar la nueva disponibilidad
-        const nuevaDisponibilidad = {
-            centro,
-            nombre,
-            cedula,
-            fecha,
-            horaInicio,
-            horaFin
-        };
-        agregarDisponibilidad(nuevaDisponibilidad);
-
-        // Registro exitoso
-        toast.success("Disponibilidad registrada con éxito.");
-        setCentro("Seleccione un centro de atención");
-        setNombre("");
-        setCedula("");
-        setFecha("");
-        setHoraInicio("");
-        setHoraFin("");
     };
 
     return (
@@ -77,44 +93,31 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                 <h3 className='uppercase'>
                     Registro de Disponibilidad
                 </h3>
-                <div className='text-left mt-2'>
-                    <p>
-                        Estimado profesional de la salud, para brindarle un mejor servicio a sus pacientes, registre su disponibilidad a
-                        continuación. 
-                        Recuerde que los horarios de atención son:
-                    </p>
-                    <ul>
-                        <li className='list-disc ml-6'>Centros de Atención Primaria: de 08:00 a 18:00.</li>
-                        <li className='list-disc ml-6'>Centros de Atención Especializada: de 09:00 a 17:00.</li>
-                    </ul>                   
-                </div>
-                <div className="w-full flex flex-col bg-neutral-50 py-8 px-10 rounded-lg shadow-lg 
-                    gap-6 mt-6">
+                <div className="w-full flex flex-col bg-neutral-50 py-8 px-10 rounded-lg shadow-lg gap-6 mt-6">
                     <form onSubmit={handleFormSubmit} className='flex flex-col gap-6'>
-                        <CentroDropdown
-                            value={centro}
-                            onChange={e => setCentro(e.target.value)}
-                            options={centrosAtencion.map(c => c.nombre)}
-                        />
-
-                        <label htmlFor="nombre" className='flex flex-col'>
-                            <span className="text-sm text-gray-700">Nombre Completo:</span>
-                            <input
-                                type="text"
-                                id="nombre"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
+                        <label htmlFor="centro" className="flex flex-col w-1/2">
+                            Centro de atención:
+                            <select
+                                id="centro"
+                                name="centro"
+                                value={formData.centro}
+                                onChange={handleChange}
                                 required
-                                placeholder="Ingrese nombres y apellidos"
-                            />
+                            >
+                                <option value="" disabled>Seleccione el centro de Atención</option>
+                                <option value="1">Centro de Atención Primaria</option>
+                                <option value="2">Centro de Atención Especializada</option>
+                            </select>
                         </label>
+
                         <label htmlFor="cedula" className='flex flex-col'>
                             <span className="text-sm text-gray-700">Número de Cédula:</span>
                             <input
                                 type="text"
                                 id="cedula"
-                                value={cedula}
-                                onChange={(e) => setCedula(e.target.value)}
+                                name="cedula"
+                                value={formData.cedula}
+                                onChange={handleChange}
                                 required
                                 placeholder="Ingrese el número de la cédula"
                             />
@@ -125,8 +128,9 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                                 <input
                                     type="date"
                                     id="fecha"
-                                    value={fecha}
-                                    onChange={(e) => setFecha(e.target.value)}
+                                    name="fecha"
+                                    value={formData.fecha}
+                                    onChange={handleChange}
                                     required
                                 />
                             </label>
@@ -136,9 +140,9 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                                     <input
                                         type="time"
                                         id="hora-inicio"
-                                        name="hora-inicio"
-                                        value={horaInicio}
-                                        onChange={(e) => setHoraInicio(e.target.value)}    
+                                        name="horaInicio"
+                                        value={formData.horaInicio}
+                                        onChange={handleChange}
                                         min="08:00"
                                         max="18:00"
                                         step="1800"
@@ -151,9 +155,9 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                                     <input
                                         type="time"
                                         id="hora-fin"
-                                        name="hora-fin"
-                                        value={horaFin}
-                                        onChange={(e) => setHoraFin(e.target.value)}    
+                                        name="horaFin"
+                                        value={formData.horaFin}
+                                        onChange={handleChange}
                                         min="08:00"
                                         max="18:00"
                                         step="1800"
@@ -162,16 +166,12 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                                 </label>
                             </div>
                         </div>
-
-                        <button type="submit" className="">
-                            Registrar Disponibilidad
-                        </button>
+                        <button type="submit">Registrar Disponibilidad</button>
                     </form>
-
                     <h4>Datos Registrados</h4>
-                    <ul id="listaCitas" className="list-disc ml-6">
+                    {/* <ul id="listaCitas" className="list-disc ml-6">
                         {disponibilidad.map((item) => (
-                            <li key={item.cedula}> 
+                            <li key={item.cedula}>
                                 <strong>Médico:</strong> {primeraEnMayuscula(item.nombre)} <br />
                                 <strong>Cédula:</strong> {item.cedula} <br />
                                 <strong>Fecha:</strong> {item.fecha} <br />
@@ -179,12 +179,11 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                                 <strong>Centro:</strong> {item.centro}
                             </li>
                         ))}
-                    </ul>
-
+                    </ul> */}
                 </div>
             </div>
         </section>
     );
-}
+};
 
 export default FormDisponibilidad;

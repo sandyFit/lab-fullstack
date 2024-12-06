@@ -7,6 +7,7 @@ import Navbar from './layouts/Navbar';
 import { Toaster } from 'react-hot-toast';
 import Footer from './layouts/Footer.jsx';
 import Home from './pages/Home.jsx';
+import FormUsuarios from './components/forms/FormUsuarios.jsx';
 
 const App = () => {
 
@@ -31,6 +32,7 @@ const App = () => {
                 <main className="flex-grow px-48 pt-8">
                     <Routes>
                         <Route index element={<Home />} />
+                        <Route path='usuarios' element={<FormUsuarios/>}/>
                         <Route path="disponibilidad" element={
                             <FormDisponibilidad
                                 disponibilidad={disponibilidad}

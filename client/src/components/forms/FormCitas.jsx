@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import CentroDropdown from "../ui/CentroDropdown";
-import { centrosAtencion } from "../../utils/centros";
+
 import { esCedulaValida, esFechaValida } from "../../utils/functions";
 import { toast } from 'react-hot-toast';
 
@@ -14,8 +14,6 @@ const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
     const [hora, setHora] = useState('');
     const [citas, setCitas] = useState([]);
 
-
-    const centroSeleccionado = centrosAtencion.find(c => c.nombre === centro);
 
     function hayDisponibilidad(medico, fecha, hora) {
 
@@ -49,12 +47,6 @@ const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
         return true;
     }
 
-    function esCitaDeSeguimiento(ultimaCita) {
-        return ultimaCita && this.tipo !== "urgencia" &&
-            new Date(this.fecha) - new Date(ultimaCita.fecha) < 7 * 24 * 60 * 60 * 1000;
-    }
-
-
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -65,29 +57,15 @@ const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
         }
 
         if (!esCedulaValida(cedula)) {
-            toast.error('La cédula debe contener 10 dígitos');
+            toast.error('La cédula debe contener solo números entre 8 y 10 dígitos');
             return;
         }
 
-        if (!centroSeleccionado) {
-            toast.error('Debe Seleccionar un centro de atención');
-            return;
-        }
-
+        
         const validarDisponibilidadMedico = hayDisponibilidad(medico, fecha, hora);
 
         if (validarDisponibilidadMedico !== true) {
             toast.error(validarDisponibilidadMedico);
-            return;
-        }
-
-        const overlaps = disponibilidad.some(d =>
-            d.fecha === fecha && d.medico === nombre &&
-            ((horaInicio >= d.horaInicio && horaInicio < d.horaFin) ||
-                (horaFin > d.horaInicio && horaFin <= d.horaFin))
-        );
-        if (overlaps) {
-            toast.error("El horario seleccionado se cruza con otra cita.");
             return;
         }
 
