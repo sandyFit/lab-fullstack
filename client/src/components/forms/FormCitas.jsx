@@ -5,7 +5,7 @@ import { esCedulaValida, esFechaValida } from "../../utils/functions";
 import { toast } from 'react-hot-toast';
 
 const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
-    const [centro, setCentro] = useState("Seleccione un de atención");
+    const [centro, setCentro] = useState("Seleccione un centro de atención");
     const [paciente, setPaciente] = useState('');
     const [cedula, setCedula] = useState('');
     const [tipo, setTipo] = useState('');

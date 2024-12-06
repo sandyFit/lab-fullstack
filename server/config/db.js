@@ -7,6 +7,7 @@ console.log('Intentando conectar a la base de datos...');
 console.log(`host: ${process.env.DB_HOST}`);  
 console.log(`user: ${process.env.DB_USER}`);  
 console.log(`password: ${process.env.DB_PASSWORD}`); 
+console.log(`password: ${process.env.DB_NAME}`); 
 
 // Verificar que todas las variables estén definidas
 if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME || !process.env.DB_PORT) {
