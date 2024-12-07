@@ -32,13 +32,13 @@
         @apply text-lg font-semibold
     }
 
-    input, select {
+    input, select, textarea {
         @apply p-2 border-2 border-neutral-400 outline-2 outline-emerald-300 rounded-md
     }
 
     button {
       @apply bg-emerald-500 text-emerald-50 p-2 uppercase font-[600] border-2 border-emerald-500
-        hover:bg-emerald-100 hover:text-emerald-500 rounded-md
+        hover:bg-emerald-100 hover:text-emerald-600 rounded-md
     }
 }
     

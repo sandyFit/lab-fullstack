@@ -1,3 +1,7 @@
+const express = require('express');
+const ruta = express.Router();
+const conexion = require('../config/db');
+
 ruta.post('/', (req, res) => {
     const { cedula_paciente, nombre_medico, tipo_solicitud, fecha, hora, motivo } = req.body;
 

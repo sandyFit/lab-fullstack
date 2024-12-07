@@ -103,7 +103,7 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                 </div>
                 <div className="w-full flex flex-col bg-neutral-50 py-8 px-10 rounded-lg shadow-lg gap-6 mt-6">
                     <form onSubmit={handleFormSubmit} className='flex flex-col gap-6'>
-                        <label htmlFor="centro" className="flex flex-col w-1/2">
+                        <label htmlFor="centro" className="flex flex-col ">
                             Centro de atención:
                             <select
                                 id="centro"
