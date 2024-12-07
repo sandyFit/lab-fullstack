@@ -1,170 +1,142 @@
 import React, { useState } from "react";
-import CentroDropdown from "../ui/CentroDropdown";
-
 import { esCedulaValida, esFechaValida } from "../../utils/functions";
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
 
-const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
-    const [centro, setCentro] = useState("Seleccione un centro de atención");
-    const [paciente, setPaciente] = useState('');
-    const [cedula, setCedula] = useState('');
-    const [tipo, setTipo] = useState('');
-    const [medico, setMedico] = useState('');
-    const [fecha, setFecha] = useState('');
-    const [hora, setHora] = useState('');
-    const [citas, setCitas] = useState([]);
+const FormCitas = ({ cita, agregarCita }) => {
+    const [formData, setFormData] = useState({
+        cedula: '',
+        medico: '',
+        tipo: '',
+        fecha: '',
+        hora: '',
+        motivo: ''
+    });
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
 
-    function hayDisponibilidad(medico, fecha, hora) {
-
-        const [horaCita, minutoCita] = hora.split(":").map(Number);
-
-        const disponibilidadMedico = disponibilidad.find(
-            d => d.medico === medico && d.fecha === fecha
-        );      
-
-        // Validar si se encuentra la disponibilidad
-        if (!disponibilidadMedico) {
-            return "El médico no está disponible en la fecha seleccionada.";
-        }
-
-
-        // Desglosar las horas del horario del médico
-        const [horaInicioMedico, minutoInicioMedico] = disponibilidadMedico.horaInicio.split(":").map(Number);
-        const [horaFinMedico, minutoFinMedico] = disponibilidadMedico.horaFin.split(":").map(Number);
-
-        // Convertir horas de la cita y horarios de disponibilidad del médico a minutos
-        const tiempoCita = horaCita * 60 + minutoCita;
-        const tiempoInicioMedico = horaInicioMedico * 60 + minutoInicioMedico;
-        const tiempoFinMedico = horaFinMedico * 60 + minutoFinMedico;
-
-        // Verificar la hora de la cita dentro del horario del médico
-        if (tiempoCita < tiempoInicioMedico || tiempoCita > tiempoFinMedico) {
-            return "La hora seleccionada está fuera del horario del médico.";
-        }
-
-        // Si la hora y la fecha son correctas, la cita es válida
-        return true;
-    }
-
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!esFechaValida(fecha)) {
-            toast.error('La fecha ingresada debe ser posterior a la fecha actual.')
-            return;
-        }
-
-        if (!esCedulaValida(cedula)) {
-            toast.error('La cédula debe contener solo números entre 8 y 10 dígitos');
-            return;
-        }
-
-        
-        const validarDisponibilidadMedico = hayDisponibilidad(medico, fecha, hora);
-
-        if (validarDisponibilidadMedico !== true) {
-            toast.error(validarDisponibilidadMedico);
-            return;
-        }
-
-
-        const nuevaCita = {
-            paciente,
-            cedula,
-            tipo,
-            medico,
-            fecha,
-            hora,
-            centro,
+        const dataToSend = {
+            cedula_paciente: formData.cedula,
+            nombre_medico: formData.medico,
+            tipo_solicitud: formData.tipo,
+            fecha: formData.fecha,
+            hora: formData.hora,
+            motivo: formData.motivo,
         };
 
-        agregarCitas(nuevaCita);
-        console.log(citas);
+        // Validaciones antes de enviar al servidor
+        if (!formData.cedula || !formData.medico || !formData.tipo || !formData.fecha || !formData.hora || !formData.motivo) {
+            toast.error('Todos los campos son obligatorios.');
+            return;
+        }
 
-        // Limpiar el formulario
-        setCentro('Seleccione un centro de atención');
-        setPaciente('');
-        setCedula('');
-        setTipo('');
-        setMedico('');
-        setFecha('');
-        setHora('');
+        if (!esFechaValida(formData.fecha)) {
+            toast.error('La fecha ingresada debe ser posterior a la fecha actual.');
+            return;
+        }
+
+        if (!esCedulaValida(formData.cedula)) {
+            toast.error('La cédula debe contener solo números entre 8 y 10 dígitos.');
+            return;
+        }
+
+        try {
+            const response = await axios.post('http://localhost:5000/registro/cita', dataToSend, {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.data.success) {
+                toast.success('Cita registrada con éxito.');
+                agregarCita(dataToSend);
+                setFormData({
+                    cedula: '',
+                    medico: '',
+                    tipo: '',
+                    fecha: '',
+                    hora: '',
+                    motivo: ''
+                });
+            } else {
+                toast.error(response.data.message || 'Error desconocido al registrar la cita.');
+            }
+        } catch (error) {
+            // Manejo de errores con base en el código HTTP del servidor
+            if (error.response) {
+                const { status, data } = error.response;
+                switch (status) {
+                    case 400:
+                        toast.error(data.error || 'Datos inválidos. Revisa los campos ingresados.');
+                        break;
+                    case 404:
+                        toast.error(data.error || 'Recurso no encontrado. Verifica la información.');
+                        break;
+                    case 409:
+                        toast.error(data.error || 'Conflicto: Verifica la disponibilidad del médico o las citas existentes.');
+                        break;
+                    case 500:
+                        toast.error('Error del servidor. Intenta de nuevo más tarde.');
+                        break;
+                    default:
+                        toast.error('Ocurrió un error desconocido. Intenta de nuevo más tarde.');
+                }
+            } else {
+                toast.error('Error de red: Verifica tu conexión a Internet.');
+            }
+        }
     };
 
     return (
-        <section className='w-full flex flex-col justify-center items-center'>
+        <section className="w-full flex flex-col justify-center items-center">
             <div className="w-[75%] flex flex-col justify-center ">
-                <h3 className='uppercase text-center'>
-                    Registro de Citas
-                </h3>
-                <div className='mt-2'>
-                    <p>
-                        Complete el formulario para agendar una cita.
-                        Recuerde que los horarios de atención son:
-                    </p>
-                    <ul>
-                        <li className='list-disc ml-6'>
-                            Centros de Atención Primaria: de 08:00 a 18:00.
-                        </li>
-                        <li className='list-disc ml-6'>
-                            Centros de Atención Especializada: de 09:00 a 17:00.
-                        </li>
-                    </ul>
+                <h3 className="uppercase text-center">Registro de Citas</h3>
+                <div className="mt-2 text-center">
+                    <p>Complete el formulario para agendar una cita.</p>
                 </div>
-                <div
-                    className="w-full flex flex-col bg-neutral-50 py-8 px-10 rounded-lg shadow-lg gap-6
-                    mt-6"
-                >
+                <div className="w-full flex flex-col bg-neutral-50 py-8 px-10 rounded-lg shadow-lg gap-6 mt-6">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                        <CentroDropdown
-                            value={centro}
-                            onChange={e => setCentro(e.target.value)}
-                            options={centrosAtencion.map(c => c.nombre)}
-                        />
-                        <label htmlFor="paciente" className="flex flex-col">
-                            Nombre del Paciente:
-                            <input
-                                type="text"
-                                id="paciente"
-                                placeholder="Ingrese el nombre completo del paciente"
-                                value={paciente}
-                                onChange={(e) => setPaciente(e.target.value)}
-                                required
-                            />
-                        </label>
-
-                        <label htmlFor="cedula" className='flex flex-col'>
-                            <span className="text-sm text-gray-700">Número de Cédula:</span>
+                        <label htmlFor="cedula" className="flex flex-col">
+                            Cédula del Paciente:
                             <input
                                 type="text"
                                 id="cedula"
-                                value={cedula}
-                                onChange={(e) => setCedula(e.target.value)}
-                                required
+                                name="cedula"
                                 placeholder="Ingrese el número de la cédula"
+                                value={formData.cedula}
+                                onChange={handleChange}
+                                required
                             />
                         </label>
-
-                        <label htmlFor="medicoCita" className="flex flex-col">
-                            Médico:
+                        <label htmlFor="medico" className="flex flex-col">
+                            Nombre del Médico:
                             <input
                                 type="text"
-                                id="medicoCita"
-                                placeholder="Ingrese el nombre completo del médico"
-                                value={medico}
-                                onChange={(e) => setMedico(e.target.value)}
+                                id="medico"
+                                name="medico"
+                                value={formData.medico}
+                                onChange={handleChange}
                                 required
+                                placeholder="Ingrese el nombre completo del médico"
                             />
                         </label>
                         <div className="flex justify-between gap-4">
-                            <label htmlFor="tipoDeCita" className="flex flex-col w-1/3">
+                            <label htmlFor="tipo" className="flex flex-col w-1/3">
                                 Tipo de Solicitud:
                                 <select
-                                    id="tipoDeCita"
-                                    value={tipo}
-                                    onChange={(e) => setTipo(e.target.value)}
+                                    id="tipo"
+                                    name="tipo"
+                                    value={formData.tipo}
+                                    onChange={handleChange}
                                     required
                                 >
                                     <option disabled value="">
@@ -175,24 +147,25 @@ const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
                                     <option value="urgencia">Urgencia</option>
                                 </select>
                             </label>
-                            <label htmlFor="fechaCita" className="flex flex-col w-1/3">
+                            <label htmlFor="fecha" className="flex flex-col w-1/3">
                                 Fecha de la Cita:
                                 <input
                                     type="date"
-                                    id="fechaCita"
-                                    value={fecha}
-                                    onChange={(e) => setFecha(e.target.value)}
+                                    id="fecha"
+                                    name="fecha"
+                                    value={formData.fecha}
+                                    onChange={handleChange}
                                     required
                                 />
                             </label>
-
-                            <label htmlFor="horaCita" className="flex flex-col w-1/3">
+                            <label htmlFor="hora" className="flex flex-col w-1/3">
                                 Hora de la Cita:
                                 <input
                                     type="time"
-                                    id="horaCita"
-                                    value={hora}
-                                    onChange={(e) => setHora(e.target.value)}
+                                    id="hora"
+                                    name="hora"
+                                    value={formData.hora}
+                                    onChange={handleChange}
                                     min="08:00"
                                     max="18:00"
                                     step="1800"
@@ -200,24 +173,30 @@ const FormCitas = ({cita, agregarCitas, disponibilidad}) => {
                                 />
                             </label>
                         </div>
-                        <button
-                            type="submit"
-                            className=""
-                        >
-                            Registrar Cita
-                        </button>
+                        <label htmlFor="motivo" className="flex flex-col">
+                            Motivo de la Consulta:
+                            <input
+                                type="text"
+                                id="motivo"
+                                name="motivo"
+                                value={formData.motivo}
+                                onChange={handleChange}
+                                required
+                                placeholder="Ingrese el motivo de la consulta"
+                            />
+                        </label>
+                        <button type="submit">Registrar Cita</button>
                     </form>
-
                     <h3 className="text-lg font-semibold">Lista de Citas</h3>
                     <ul id="listaCitas" className="list-disc ml-6">
-                        {citas.map((cita, index) => (
+                        {cita.map((c, index) => (
                             <li key={index} className="mb-4">
-                                <strong>Centro:</strong> {cita.centro} <br />
-                                <strong>Paciente:</strong> {cita.paciente} <br />
-                                <strong>Tipo de Cita:</strong> {cita.tipo} <br />
-                                <strong>Médico:</strong> {cita.medico} <br />
-                                <strong>Fecha:</strong> {cita.fecha} <br />
-                                <strong>Hora:</strong> {cita.hora}
+                                <strong>Paciente:</strong> {c.cedula_paciente} <br />
+                                <strong>Médico:</strong> {c.nombre_medico} <br />
+                                <strong>Tipo:</strong> {c.tipo_solicitud} <br />
+                                <strong>Fecha:</strong> {c.fecha} <br />
+                                <strong>Hora:</strong> {c.hora} <br />
+                                <strong>Motivo:</strong> {c.motivo}
                             </li>
                         ))}
                     </ul>
