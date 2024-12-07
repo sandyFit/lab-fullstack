@@ -65,18 +65,22 @@ const FormCumplimiento = ({cumplimiento, agregarCumplimiento}) => {
                 toast.error(response.data.message || 'Error desconocido al registrar el cumplimiento.');
             }
         } catch (error) {
-            // Manejo de errores con base en el código HTTP del servidor
             if (error.response) {
                 const { status, data } = error.response;
+                // Mapear los errores retornados por el backend
                 switch (status) {
                     case 400:
                         toast.error(data.error || 'Datos inválidos. Revisa los campos ingresados.');
+                        if (data.error.includes('paciente')) {
+                            // Ejemplo: Resalta el campo de la cédula del paciente
+                            document.querySelector('#cedulaPaciente').focus();
+                        }
                         break;
                     case 404:
                         toast.error(data.error || 'Recurso no encontrado. Verifica la información.');
                         break;
                     case 409:
-                        toast.error(data.error || 'Conflicto: Verifica la disponibilidad del médico o las citas existentes.');
+                        toast.error(data.error || 'Conflicto: La cita o disponibilidad ya están ocupadas.');
                         break;
                     case 500:
                         toast.error('Error del servidor. Intenta de nuevo más tarde.');
@@ -88,8 +92,6 @@ const FormCumplimiento = ({cumplimiento, agregarCumplimiento}) => {
                 toast.error('Error de red: Verifica tu conexión a Internet.');
             }
         }
-    
-
     }
 
     return (
