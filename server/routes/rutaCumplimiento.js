@@ -50,8 +50,8 @@ ruta.post('/', (req, res) => {
 
             // Registrar cumplimiento en la tabla 'cumplimiento'
             const consultaCumplimiento = `
-                INSERT INTO cumplimiento (cita_id, tratamiento, motivo, cumplida, fecha_cumplimiento)
-                VALUES (?, ?, ?, 1, NOW())
+                INSERT INTO cumplimiento (cita_id, tratamiento, motivo)
+                VALUES (?, ?, ?)
             `;
             conexion.query(consultaCumplimiento, [cita_id, tratamiento, motivo], (err, results) => {
                 if (err) {

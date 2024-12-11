@@ -27,11 +27,13 @@ const FormCitas = ({ cita, agregarCita }) => {
         const dataToSend = {
             cedula_paciente: formData.cedula,
             nombre_medico: formData.medico,
-            tipo_solicitud: formData.tipo,
+            tipo_cita: formData.tipo,
             fecha: formData.fecha,
             hora: formData.hora,
             motivo: formData.motivo,
         };
+
+        console.log('data to send:', dataToSend);
 
         // Validaciones antes de enviar al servidor
         if (!formData.cedula || !formData.medico || !formData.tipo || !formData.fecha || !formData.hora || !formData.motivo) {
@@ -57,6 +59,7 @@ const FormCitas = ({ cita, agregarCita }) => {
             });
 
             if (response.data.success) {
+                console.log('data success response:', response.data.success);
                 toast.success('Cita registrada con éxito.');
                 agregarCita(dataToSend);
                 setFormData({
@@ -68,6 +71,7 @@ const FormCitas = ({ cita, agregarCita }) => {
                     motivo: ''
                 });
             } else {
+                console.log('data error response:', response.data.messag)
                 toast.error(response.data.message || 'Error desconocido al registrar la cita.');
             }
         } catch (error) {
@@ -131,7 +135,7 @@ const FormCitas = ({ cita, agregarCita }) => {
                         </label>
                         <div className="flex justify-between gap-4">
                             <label htmlFor="tipo" className="flex flex-col w-1/3">
-                                Tipo de Solicitud:
+                                Tipo de cita:
                                 <select
                                     id="tipo"
                                     name="tipo"
@@ -193,7 +197,7 @@ const FormCitas = ({ cita, agregarCita }) => {
                             <li key={index} className="mb-4">
                                 <strong>Paciente:</strong> {c.cedula_paciente} <br />
                                 <strong>Médico:</strong> {c.nombre_medico} <br />
-                                <strong>Tipo:</strong> {c.tipo_solicitud} <br />
+                                <strong>Tipo:</strong> {c.tipo_cita} <br />
                                 <strong>Fecha:</strong> {c.fecha} <br />
                                 <strong>Hora:</strong> {c.hora} <br />
                                 <strong>Motivo:</strong> {c.motivo}

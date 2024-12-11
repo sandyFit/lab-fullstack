@@ -12,6 +12,10 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
         horaInicio: '',
         horaFin: ''
     });
+    const centrosMap = {
+        1: 'Centro de Atención Primaria',
+        2: 'Centro de Atención Especializada'
+    };
 
     const handleChange = e => {
         const { name, value } = e.target;
@@ -183,8 +187,8 @@ const FormDisponibilidad = ({ disponibilidad, agregarDisponibilidad }) => {
                                 <strong>Médico:</strong> {primeraEnMayuscula(item.nombre)} <br />
                                 <strong>Cédula:</strong> {item.cedula} <br />
                                 <strong>Fecha:</strong> {item.fecha} <br />
-                                <strong>Horario:</strong> {item.horaInicio} - {item.horaFin} <br />
-                                <strong>Centro:</strong> {item.centro}
+                                <strong>Horario:</strong> {item.hora_inicio} - {item.hora_fin} <br />
+                                <strong>Centro:</strong> {centrosMap[item.centro_id]} <br />
                             </li>
                         ))}
                     </ul>

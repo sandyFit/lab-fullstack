@@ -3,7 +3,7 @@ const ruta = express.Router();
 const conexion = require('../config/db');
 
 ruta.post('/', (req, res) => {
-    const { cedula_paciente, nombre_medico, tipo_solicitud, fecha, hora, motivo } = req.body;
+    const {cedula_paciente, nombre_medico, tipo_cita, fecha, hora, motivo } = req.body;
 
     // Verificar si la cédula del paciente es válida
     const consultaPaciente = 'SELECT id FROM usuarios WHERE cedula = ? AND tipo_usuario = "paciente"';
@@ -42,7 +42,7 @@ ruta.post('/', (req, res) => {
             const medico_id = resultsMedico[0].id;
 
             // Verificar que el paciente no tiene cita programada en los próximos 7 días (excepto urgencias)
-            if (tipo_solicitud !== 'urgencia') {
+            if (tipo_cita !== 'urgencia') {
                 const consultaCitasRecientes = `
                     SELECT * FROM citas 
                     WHERE paciente_id = ? 
@@ -110,11 +110,11 @@ ruta.post('/', (req, res) => {
 
                                     // Insertar la nueva cita si todas las validaciones pasan
                                     const consultaCita = `
-                                        INSERT INTO citas (paciente_id, medico_id, tipo_solicitud, fecha, hora, motivo) 
+                                        INSERT INTO citas (paciente_id, medico_id, tipo_cita, fecha, hora, motivo) 
                                         VALUES (?, ?, ?, ?, ?, ?)
                                     `;
                                     conexion.query(consultaCita,
-                                        [paciente_id, medico_id, tipo_solicitud, fecha, hora, motivo],
+                                        [paciente_id, medico_id, tipo_cita, fecha, hora, motivo],
                                         (err, results) => {
                                             if (err) {
                                                 return res.status(500).json({
@@ -134,10 +134,10 @@ ruta.post('/', (req, res) => {
             } else {
                 // Insertar la cita de urgencia sin restricción de fecha
                 const consultaCita = `
-                    INSERT INTO citas (paciente_id, medico_id, tipo_solicitud, fecha, hora, motivo) 
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO citas (paciente_id, medico_id, tipo_cita, fecha, hora, motivo) 
+                    VALUES (? ?, ?, ?, ?, ?, ?)
                 `;
-                conexion.query(consultaCita, [paciente_id, medico_id, tipo_solicitud, fecha, hora, motivo],
+                conexion.query(consultaCita, [paciente_id, medico_id, tipo_cita, fecha, hora, motivo],
                     (err, results) => {
                         if (err) {
                             return res.status(500).json({
